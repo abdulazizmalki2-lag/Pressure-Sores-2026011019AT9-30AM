@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الخريطة الذهنية التفاعلية: تقرحات الفراش</title>
+  <!-- استيراد خط Tajawal العربي الاحترافي -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* متغيرات الألوان والتصميم الطبي */
+    :root {
+      --navy: #1b365d;
+      --navy-light: #274b80;
+      --crimson: #c82333;
+      --crimson-soft: #fdf2f3;
+      --teal: #0f766e;
+      --amber: #b45309;
+      --purple: #5b21b6;
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #dbe3ee;
+      --shadow: 0 8px 24px rgba(27, 54, 93, 0.08);
+      --font-scale: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: "Tajawal", sans-serif;
+      background-color: var(--bg);
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--text);
+      min-height: 100vh;
+      font-size: calc(16px * var(--font-scale));
+      line-height: 1.65;
+    }
+
+    /* شريط التحكم العلوي المثبت */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .toolbar-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge-stop {
+      background: var(--crimson);
+      color: #fff;
+      font-weight: 800;
+      padding: 4px 11px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(200, 35, 51, 0.25);
+    }
+
+    .toolbar-title h1 {
+      font-size: 1.12em;
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      font-family: "Tajawal", sans-serif;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--navy);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.88em;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-light);
+    }
+
+    /* حاوية الخريطة الذهنية الرئيسية */
+    .mindmap-wrapper {
+      position: relative;
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    /* طبقة رسم الخيوط المنحنية SVG */
+    #threads-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .thread-path {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      transition: stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease;
+    }
+
+    .thread-sub {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-dasharray: 6 4;
+      stroke-linecap: round;
+      animation: dashFlow 18s linear infinite;
+    }
+
+    @keyframes dashFlow {
+      to {
+        stroke-dashoffset: -120;
+      }
+    }
+
+    /* شبكة الأعمدة الثلاثة للخريطة الذهنية */
+    .mindmap-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 250px 310px minmax(0, 1fr);
+      align-items: center;
+      gap: 56px;
+    }
+
+    /* العمود الأول: العقدة المركزية */
+    .root-column {
+      display: flex;
+      justify-content: center;
+    }
+
+    .root-node {
+      background: linear-gradient(135deg, var(--navy) 0%, #102341 100%);
+      color: #fff;
+      padding: 28px 20px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 14px 32px rgba(27, 54, 93, 0.25);
+      border: 3px solid #fff;
+      width: 100%;
+    }
+
+    .root-node-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 12px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .root-node h2 {
+      font-size: 1.42em;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .root-node .en-sub {
+      display: inline-block;
+      font-size: 0.8em;
+      font-weight: 700;
+      background: rgba(200, 35, 51, 0.9);
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .root-node p {
+      font-size: 0.85em;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+
+    /* العمود الثاني: المحاور الخمسة الأساسية */
+    .main-nodes-column {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .main-node {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      user-select: none;
+    }
+
+    .main-node:hover {
+      transform: translateX(-4px);
+    }
+
+    .main-node.active {
+      color: #fff;
+      transform: translateX(-6px) scale(1.02);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    }
+
+    .main-node-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .node-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1em;
+      flex-shrink: 0;
+    }
+
+    .main-node h3 {
+      font-size: 1.05em;
+      font-weight: 800;
+      line-height: 1.35;
+      word-wrap: break-word;
+    }
+
+    .main-node span.hint {
+      font-size: 0.8em;
+      opacity: 0.84;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .chevron {
+      font-size: 1.05em;
+      font-weight: bold;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .main-node.active .chevron {
+      transform: rotate(180deg);
+    }
+
+    /* العمود الثالث: التقسيمات الفرعية والشروحات */
+    .sub-nodes-column {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: 380px;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .empty-state {
+      background: rgba(255, 255, 255, 0.88);
+      border: 2px dashed #cbd5e1;
+      border-radius: 20px;
+      padding: 44px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .empty-state h3 {
+      color: var(--navy);
+      margin-bottom: 6px;
+      font-size: 1.2em;
+    }
+
+    .branch-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: fadeSlideIn 0.35s ease forwards;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .branch-header-banner {
+      padding: 12px 18px;
+      border-radius: 14px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.08em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    /* بطاقة التقسيمة الفرعية */
+    .sub-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+      transition: all 0.25s ease;
+    }
+
+    .sub-card:hover {
+      border-color: #b8c7dc;
+    }
+
+    .sub-card-header {
+      padding: 15px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      transition: background 0.2s ease;
+      user-select: none;
+    }
+
+    .sub-card-header:hover {
+      background: #f8fafc;
+    }
+
+    .sub-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.04em;
+      color: var(--navy);
+      min-width: 0;
+    }
+
+    .dot-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .toggle-pill {
+      font-size: 0.78em;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .sub-card.open .toggle-pill {
+      background: var(--navy);
+      color: #fff;
+    }
+
+    /* جسم الشرح المنسدل تحت التقسيمة */
+    .sub-card-body {
+      display: none;
+      padding: 0 20px 20px 20px;
+      border-top: 1px solid #f1f5f9;
+      background: #fcfdff;
+    }
+
+    .sub-card.open .sub-card-body {
+      display: block;
+      animation: expandDown 0.25s ease;
+    }
+
+    @keyframes expandDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .explanation-list {
+      list-style: none;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .explanation-list li {
+      position: relative;
+      padding-right: 22px;
+      line-height: 1.7;
+      color: #334155;
+      font-size: 0.98em;
+      word-wrap: break-word;
+    }
+
+    .explanation-list li::before {
+      content: "•";
+      position: absolute;
+      right: 2px;
+      top: -2px;
+      font-size: 1.35em;
+      font-weight: 800;
+      color: var(--crimson);
+    }
+
+    /* ============================================================
+       مكونات البطاقات البصرية الهجينة (HTML نظيف + SVG متجهي نقي)
+       تضمن عدم قص أي نص عربي مهما كان حجم الشاشة
+       ============================================================ */
+    .visual-box {
+      margin-top: 16px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .visual-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .visual-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .visual-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .v-card {
+      background: #ffffff;
+      border: 1.5px solid #dbe3ee;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .v-card.success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .v-card.danger {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .v-card.info {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .v-card.teal {
+      background: #f0fdfa;
+      border-color: #99f6e4;
+    }
+
+    .v-card.amber {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .v-card.purple {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+
+    .v-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .v-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #f1f5f9;
+    }
+
+    .v-card h4 {
+      font-size: 0.96em;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.35;
+      word-wrap: break-word;
+    }
+
+    .v-card p {
+      font-size: 0.88em;
+      color: #475569;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+
+    .v-svg-stage {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .v-svg-stage svg {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* شارات نقاط الضغط المرقمة تحت رسومات الوضعيات */
+    .pin-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .pin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.82em;
+      font-weight: 700;
+    }
+
+    .pin-num {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #dc2626;
+      color: #fff;
+      font-size: 0.82em;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* نبض نقاط الضغط في SVG */
+    @keyframes pulseDot {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.55;
+        transform: scale(1.22);
+      }
+    }
+
+    .pulse-point {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+
+    /* شارة الوقت للمراحل الأربع */
+    .stage-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.78em;
+      font-weight: 800;
+      width: fit-content;
+    }
+
+    /* صف أكواب الماء العشرة */
+    .cups-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 0;
+    }
+
+    .cup-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.75em;
+      font-weight: 800;
+      color: #1d4ed8;
+    }
+
+    .visual-caption {
+      font-size: 0.85em;
+      font-weight: 700;
+      color: var(--navy);
+      background: #e2e8f0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      text-align: center;
+      align-self: center;
+    }
+
+    /* التجاوب مع الشاشات المتوسطة والصغيرة */
+    @media (max-width: 1120px) {
+      .mindmap-grid {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      .root-node {
+        max-width: 440px;
+      }
+
+      .main-nodes-column {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .main-node:hover,
+      .main-node.active {
+        transform: translateY(-3px);
+      }
+
+      .visual-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .toolbar {
+        padding: 10px 14px;
+      }
+      .mindmap-wrapper {
+        padding: 20px 12px 60px;
+      }
+      .sub-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .toggle-pill {
+        align-self: flex-end;
+      }
+      .visual-grid-2,
+      .visual-grid-3,
+      .visual-grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- شريط التحكم العلوي -->
+  <header class="toolbar">
+    <div class="toolbar-title">
+      <span class="badge-stop">STOP</span>
+      <h1>الخريطة الذهنية التفاعلية: تقرحات الفراش (إصابات الضغط)</h1>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn btn-primary" onclick="expandAll()">📂 فتح جميع التقسيمات والشروحات</button>
+      <button class="btn" onclick="resetMap()">🔄 طي الكل (وضع البداية)</button>
+      <button class="btn" onclick="changeFontSize(0.1)">A+ تكبير</button>
+      <button class="btn" onclick="changeFontSize(-0.1)">A- تصغير</button>
+    </div>
+  </header>
+
+  <!-- حاوية الخريطة الذهنية -->
+  <main class="mindmap-wrapper" id="mindmap-wrapper">
+    <!-- طبقة رسم الخيوط المنحنية الديناميكية -->
+    <svg id="threads-svg"></svg>
+
+    <div class="mindmap-grid">
+      <!-- 1. العقدة المركزية -->
+      <div class="root-column">
+        <div class="root-node" id="root-node">
+          <div class="root-node-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M12 8v4"/>
+              <path d="M12 16h.01"/>
+            </svg>
+          </div>
+          <h2>تقرحات الفراش</h2>
+          <span class="en-sub">Pressure Injury</span>
+          <p>اختر أي محور من المحاور الخمسة لاستكشاف المعلومات والرسوم التوضيحية</p>
+        </div>
+      </div>
+
+      <!-- 2. المحاور الخمسة الأساسية -->
+      <div class="main-nodes-column" id="main-nodes-container"></div>
+
+      <!-- 3. التقسيمات الفرعية والشروحات -->
+      <div class="sub-nodes-column" id="sub-nodes-container">
+        <div class="empty-state" id="empty-state">
+          <span class="icon">👈</span>
+          <h3>استكشف الخريطة الذهنية</h3>
+          <p>اضغط على أي محور من المحاور الخمسة لتتفرع منه الأقسام، ثم اضغط على أي قسم لعرض الشرح والصور التوضيحية.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * مكتبة المكونات البصرية الهجينة (HTML + Pure Vector SVG بدون أي نصوص داخل SVG)
+     * تضمن وضوحاً فائقاً وملاءمة تامة للغة العربية RTL على كافة الشاشات
+     */
+    const visualBlocks = {
+      // 1.1 آلية الحدوث (انضغاط الشعيرات الدموية بين العظم والسطح)
+      mechanism: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <div class="v-card success">
+              <h4>١. الوضع الطبيعي (حركة مستمرة)</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+                  <!-- طبقة الجلد -->
+                  <rect x="15" y="14" width="230" height="18" rx="7" fill="#fed7aa" stroke="#fb923c" stroke-width="1.5"/>
+                  <!-- وعاء دموي مفتوح وتدفق دم سليم -->
+                  <rect x="15" y="42" width="230" height="24" rx="12" fill="#ef4444"/>
+                  <line x1="225" y1="54" x2="40" y2="54" stroke="#ffffff" stroke-width="3" stroke-dasharray="10 7" stroke-linecap="round"/>
+                  <polygon points="32,54 46,47 46,61" fill="#ffffff"/>
+                  <!-- طبقة العظم -->
+                  <rect x="45" y="76" width="170" height="20" rx="10" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <p>تتمدد الشعيرات الدموية بحرية ويمر الدم محملاً بالأكسجين والغذاء إلى طبقة الجلد والأنسجة.</p>
+            </div>
+
+            <div class="v-card danger">
+              <h4>٢. عند الضغط المستمر (قلة الحركة)</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg">
+                  <!-- أسهم ضغط وزن الجسم للأسفل -->
+                  <path d="M95 4 L95 18 M130 4 L130 18 M165 4 L165 18" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round"/>
+                  <polygon points="95,21 90,14 100,14" fill="#dc2626"/>
+                  <polygon points="130,21 125,14 135,14" fill="#dc2626"/>
+                  <polygon points="165,21 160,14 170,14" fill="#dc2626"/>
+                  <!-- طبقة الجلد المنضغطة -->
+                  <path d="M15 24 Q130 42 245 24 L245 40 Q130 56 15 40 Z" fill="#fca5a5" stroke="#ef4444" stroke-width="1.5"/>
+                  <!-- وعاء دموي مختنق موضعياً -->
+                  <path d="M15 48 Q130 66 245 48 L245 68 Q130 58 15 68 Z" fill="#991b1b"/>
+                  <circle cx="130" cy="59" r="9" fill="#dc2626" stroke="#ffffff" stroke-width="1.5"/>
+                  <path d="M126 55 L134 63 M134 55 L126 63" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+                  <!-- العظم والسطح الخارجي -->
+                  <rect x="45" y="76" width="170" height="20" rx="10" fill="#cbd5e1" stroke="#64748b" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <p>ينحصر الجلد بين العظم والمرتبة فتختنق الشعيرات الدموية موضعياً وتتحلل الأنسجة.</p>
+            </div>
+          </div>
+          <div class="visual-caption">نقص التروية يحدث موضعياً في نقطة التلامس بين العظم والسطح الخارجي</div>
+        </div>
+      `,
+
+      // 1.2 أماكن ظهور التقرحات (رسومات طبية فنية محتشمة لوضعيتي الظهر والجنب مع نقاط ضغط نابضة)
+      pressurePoints: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <!-- لوحة ١: الاستلقاء على الظهر -->
+            <div class="v-card">
+              <h4>١. وضعية الاستلقاء على الظهر</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 360 135" xmlns="http://www.w3.org/2000/svg">
+                  <!-- المرتبة الطبية -->
+                  <rect x="14" y="102" width="332" height="16" rx="8" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>
+                  <!-- وسادة الرأس -->
+                  <ellipse cx="305" cy="95" rx="30" ry="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                  <!-- رسم تشريحي محتشم لمريض مستلقٍ على الظهر بلباس طبي فضفاض -->
+                  <!-- الرأس والرقبة -->
+                  <circle cx="305" cy="75" r="14" fill="#fde68a" stroke="#1b365d" stroke-width="1.8"/>
+                  <path d="M291 78 L278 80 L278 92 L292 90 Z" fill="#fde68a" stroke="#1b365d" stroke-width="1.5"/>
+                  <!-- الجذع والكتف بلباس طبي أزرق فضفاض -->
+                  <path d="M278 72 Q255 64 225 68 L175 70 Q158 72 155 82 L155 98 L278 98 Z" fill="#93c5fd" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- الذراع مستريحة بجانب الجسم -->
+                  <path d="M262 78 L205 84 L182 86" fill="none" stroke="#1b365d" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M262 78 L205 84 L182 86" fill="none" stroke="#bfdbfe" stroke-width="3" stroke-linecap="round"/>
+                  <!-- الساق والقدم بلباس فضفاض محتشم -->
+                  <path d="M155 74 L95 78 L38 82 L35 64 L25 65 L27 98 L155 98 Z" fill="#60a5fa" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- نقاط الضغط الحمراء النابضة الأربعة -->
+                  <circle class="pulse-point" cx="305" cy="92" r="6.5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="255" cy="97" r="7" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="172" cy="97" r="7.5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="32" cy="97" r="6.5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="pin-badges">
+                <span class="pin-badge"><span class="pin-num">1</span> مؤخرة الرأس</span>
+                <span class="pin-badge"><span class="pin-num">2</span> الأكتاف</span>
+                <span class="pin-badge"><span class="pin-num">3</span> أسفل الظهر</span>
+                <span class="pin-badge"><span class="pin-num">4</span> الكعبين</span>
+              </div>
+            </div>
+
+            <!-- لوحة ٢: الاستلقاء على الجنب -->
+            <div class="v-card">
+              <h4>٢. وضعية الاستلقاء على الجنب</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 360 135" xmlns="http://www.w3.org/2000/svg">
+                  <!-- المرتبة الطبية -->
+                  <rect x="14" y="102" width="332" height="16" rx="8" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>
+                  <!-- وسادة الرأس -->
+                  <ellipse cx="305" cy="95" rx="30" ry="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                  <!-- رسم تشريحي محتشم لمريض مستلقٍ على جنبه بلباس طبي فضفاض -->
+                  <!-- الرأس -->
+                  <circle cx="305" cy="76" r="14" fill="#fde68a" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- الجذع الجانبي بلباس طبي فضفاض -->
+                  <path d="M290 78 L255 72 L175 72 Q155 74 150 84 L150 98 L290 98 Z" fill="#a5b4fc" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- الذراع مثنية بهدوء للأمام -->
+                  <path d="M262 80 L236 66 L212 74" fill="none" stroke="#1b365d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M262 80 L236 66 L212 74" fill="none" stroke="#e0e7ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- الساقان بلباس طويل محتشم مع انثناء خفيف في الركبة -->
+                  <path d="M150 76 L98 76 L34 84 L32 72 L24 73 L26 98 L98 98 L150 98 Z" fill="#818cf8" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- نقاط الضغط الحمراء النابضة الخمسة -->
+                  <circle class="pulse-point" cx="305" cy="90" r="6" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="262" cy="97" r="7" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="172" cy="97" r="7.5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="98" cy="97" r="6.5" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                  <circle class="pulse-point" cx="32" cy="97" r="6" fill="#dc2626" stroke="#ffffff" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="pin-badges">
+                <span class="pin-badge"><span class="pin-num">1</span> الأذن / الرأس</span>
+                <span class="pin-badge"><span class="pin-num">2</span> الكتف</span>
+                <span class="pin-badge"><span class="pin-num">3</span> الورك</span>
+                <span class="pin-badge"><span class="pin-num">4</span> الركبة</span>
+                <span class="pin-badge"><span class="pin-num">5</span> الكاحل</span>
+              </div>
+            </div>
+          </div>
+          <div class="visual-caption">الدوائر الحمراء تمثل مناطق انضغاط العظم على الجلد عند البقاء في وضعية واحدة</div>
+        </div>
+      `,
+
+      // 1.3 مراحل تطور القرحة عبر الزمن (٤ مراحل)
+      stagesTimeline: `
+        <div class="visual-box">
+          <div class="visual-grid-4">
+            <!-- المرحلة 1 -->
+            <div class="v-card danger">
+              <span class="stage-pill" style="background:#fee2e2; color:#991b1b;">المرحلة ١ • ساعات</span>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 140 72" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="8" y="10" width="124" height="16" rx="4" fill="#fed7aa"/>
+                  <ellipse cx="70" cy="18" rx="30" ry="6" fill="#ef4444" opacity="0.8"/>
+                  <rect x="8" y="28" width="124" height="18" rx="4" fill="#fde68a"/>
+                  <rect x="8" y="48" width="124" height="16" rx="4" fill="#fca5a5"/>
+                </svg>
+              </div>
+              <h4>احمرار الجلد السليم</h4>
+              <p>بقعة حمراء دافئة لا يزول لونها عند الضغط عليها بالإصبع.</p>
+            </div>
+
+            <!-- المرحلة 2 -->
+            <div class="v-card danger">
+              <span class="stage-pill" style="background:#fecaca; color:#991b1b;">المرحلة ٢ • أيام</span>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 140 72" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 10 L44 10 Q70 25 96 10 L132 10 L132 26 L8 26 Z" fill="#fed7aa"/>
+                  <path d="M44 10 Q70 25 96 10 Z" fill="#ef4444"/>
+                  <rect x="8" y="28" width="124" height="18" rx="4" fill="#fde68a"/>
+                  <rect x="8" y="48" width="124" height="16" rx="4" fill="#fca5a5"/>
+                </svg>
+              </div>
+              <h4>تقرح سطحي / فقاعة</h4>
+              <p>تآكل الطبقة الخارجية للجلد وظهور جرح مفتوح سطحي.</p>
+            </div>
+
+            <!-- المرحلة 3 -->
+            <div class="v-card danger">
+              <span class="stage-pill" style="background:#fca5a5; color:#7f1d1d;">المرحلة ٣ • أسابيع</span>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 140 72" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 10 L38 10 L52 44 L88 44 L102 10 L132 10 L132 46 L8 46 Z" fill="#fde68a"/>
+                  <path d="M38 10 L52 44 L88 44 L102 10 Z" fill="#b91c1c"/>
+                  <rect x="8" y="48" width="124" height="16" rx="4" fill="#fca5a5"/>
+                </svg>
+              </div>
+              <h4>قرحة عميقة للدهون</h4>
+              <p>فقدان كامل لطبقات الجلد ووصول الحفرة إلى الأنسجة الدهنية.</p>
+            </div>
+
+            <!-- المرحلة 4 -->
+            <div class="v-card danger">
+              <span class="stage-pill" style="background:#dc2626; color:#ffffff;">المرحلة ٤ • متقدمة</span>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 140 72" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 10 L34 10 L50 56 L90 56 L106 10 L132 10 L132 58 L8 58 Z" fill="#fca5a5"/>
+                  <path d="M34 10 L50 56 L90 56 L106 10 Z" fill="#7f1d1d"/>
+                  <rect x="44" y="57" width="52" height="9" rx="4" fill="#e2e8f0" stroke="#64748b" stroke-width="1"/>
+                </svg>
+              </div>
+              <h4>تلف العضلات والعظم</h4>
+              <p>وصول التقرح للعضلات أو العظم مع خطورة عالية للعدوى.</p>
+            </div>
+          </div>
+          <div class="visual-caption">التدخل المبكر في المرحلة الأولى يمنع تفاقم الإصابة إلى المراحل العميقة</div>
+        </div>
+      `,
+
+      // 1.4 الفئات الأكثر عرضة
+      highRisk: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <div class="v-card info">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#dbeafe;">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="10" cy="17" r="4"/>
+                    <path d="M10 13V6h5l2 7h3"/>
+                    <circle cx="10" cy="4" r="1.5" fill="#1d4ed8"/>
+                    <path d="M18 17h2"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>مستخدمو الكراسي المتحركة</h4>
+                  <p>الجلوس لفترات طويلة خلال اليوم يركز الوزن على منطقة الحوض وأسفل الظهر.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="v-card danger">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#fee2e2;">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c82333" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 18V8"/>
+                    <path d="M2 14h20v4"/>
+                    <path d="M22 18v-4"/>
+                    <circle cx="7" cy="10" r="2" fill="#c82333"/>
+                    <path d="M11 11h9v3h-9z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>ملازمو الفراش</h4>
+                  <p>البقاء في السرير لفترات طويلة دون تغيير الوضعية يعرّض نقاط الارتكاز للضغط المستمر.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 2.1 الوقاية في حال ملازمة الفراش
+      bedPositioning: `
+        <div class="visual-box">
+          <div class="v-card info">
+            <h4>الوضعية الوقائية الصحيحة عند الاستلقاء على جانب واحد</h4>
+            <div class="v-svg-stage">
+              <svg viewBox="0 0 460 145" xmlns="http://www.w3.org/2000/svg">
+                <!-- المرتبة الناعمة -->
+                <rect x="16" y="112" width="428" height="18" rx="8" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5"/>
+                <!-- وسادة الرأس -->
+                <ellipse cx="395" cy="104" rx="34" ry="9" fill="#ffffff" stroke="#2563eb" stroke-width="1.8"/>
+                <!-- الرأس -->
+                <circle cx="395" cy="84" r="15" fill="#fde68a" stroke="#1b365d" stroke-width="2"/>
+                <!-- الجذع بلباس طبي -->
+                <path d="M378 86 L255 84 L255 108 L378 108 Z" fill="#60a5fa" stroke="#1b365d" stroke-width="2"/>
+                <!-- الساق السفلية -->
+                <path d="M255 98 L160 100 L82 100 L82 108 L160 108 L255 108 Z" fill="#93c5fd" stroke="#1b365d" stroke-width="1.8"/>
+                <!-- وسادة صفراء فاصلة بين الساقين لمنع احتكاك الركبتين -->
+                <rect x="122" y="84" width="84" height="15" rx="7.5" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+                <!-- الساق العلوية مستريحة فوق الوسادة -->
+                <path d="M255 86 L160 76 L82 78 L82 86 L160 84 L255 94 Z" fill="#3b82f6" stroke="#1b365d" stroke-width="1.8"/>
+                <!-- وسادة خضراء/إسفنج تحت الساق لرفع الكعبين عن المرتبة -->
+                <rect x="38" y="92" width="56" height="18" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-width="2"/>
+                <!-- أسهم دائرية للتقليب كل ساعتين -->
+                <path d="M325 36 A 24 24 0 1 1 302 52" fill="none" stroke="#1b365d" stroke-width="2.5" stroke-linecap="round"/>
+                <polygon points="300,46 308,52 298,56" fill="#1b365d"/>
+              </svg>
+            </div>
+            <div class="pin-badges">
+              <span class="pin-badge" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af;">⏰ تقليب وتغيير الوضعية كل ساعتين</span>
+              <span class="pin-badge" style="background:#fefce8; border-color:#fde047; color:#854d0e;">🟡 وسادة فاصلة بين الساقين</span>
+              <span class="pin-badge" style="background:#f0fdf4; border-color:#86efac; color:#166534;">🟢 إسفنجة لرفع الكعبين عن المرتبة</span>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 2.2 الوقاية في حال استخدام كرسي متحرك
+      wheelchairPrevention: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <div class="v-card info">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#dbeafe; font-weight:800; color:#1d4ed8; font-size:0.85em;">15m</div>
+                <div>
+                  <h4>كل ١٠ إلى ١٥ دقيقة (ذاتياً)</h4>
+                  <p>تغيير الوضعية بنفسك عبر إمالة الجذع أو رفع الوزن عن المقعد بانتظام.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="v-card danger">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#fee2e2; font-weight:800; color:#c82333; font-size:0.85em;">1hr</div>
+                <div>
+                  <h4>مرة كل ساعة على الأقل (بمساعدة)</h4>
+                  <p>إذا لم يكن التحرك ممكناً بمفردك، اطلب من مرافق تحريكك مرة كل ساعة.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 3.1 العناية بالبشرة
+      skinCare: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <div class="v-card teal">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#ccfbf1;">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>غسل فوري بماء دافئ وصابون</h4>
+                  <p>تنظيف المناطق المتسخة فوراً بالماء الدافئ وتجنب الماء الحار تماماً.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="v-card teal">
+              <div class="v-card-header">
+                <div class="v-icon-wrap" style="background:#ccfbf1;">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="7" y="6" width="10" height="15" rx="3"/>
+                    <path d="M9 6V3h6v3"/>
+                    <path d="M12 11v5"/>
+                    <path d="M9.5 13.5h5"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4>ترطيب البشرة الجافة</h4>
+                  <p>استخدام مرطب لطيف بانتظام لحماية الجلد من الجفاف والتشقق.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 3.2 النشاط البدني وتحريك الأطراف (رسومات طبية احترافية بديلة لأيقونة البهلوان)
+      exercise: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <!-- بطاقة التمارين اليومية النشطة -->
+            <div class="v-card teal">
+              <h4>١. التمارين اليومية النشطة</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">
+                  <!-- مقعد مريح -->
+                  <path d="M75 52 L75 86 L122 86" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round"/>
+                  <line x1="82" y1="86" x2="82" y2="102" stroke="#64748b" stroke-width="3"/>
+                  <line x1="115" y1="86" x2="115" y2="102" stroke="#64748b" stroke-width="3"/>
+                  <!-- شخص جالس يرفع ذراعه بلطف لتنشيط الدورة الدموية -->
+                  <circle cx="96" cy="30" r="11" fill="#fde68a" stroke="#0f766e" stroke-width="2"/>
+                  <path d="M86 44 L106 44 L108 78 L86 78 Z" rx="6" fill="#5eead4" stroke="#0f766e" stroke-width="2"/>
+                  <!-- الساق المثنية -->
+                  <path d="M104 74 L132 74 L136 98" fill="none" stroke="#0f766e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- الذراع مرفوعة بلطف مع أسهم حركة -->
+                  <path d="M102 48 L130 34 L144 22" fill="none" stroke="#0f766e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M148 36 A 24 24 0 0 0 132 16" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="4 3"/>
+                </svg>
+              </div>
+              <p>ممارسة تمارين خفيفة ومنتظمة لتحريك المفاصل وتنشيط تدفق الدم حسب القدرة.</p>
+            </div>
+
+            <!-- بطاقة التحريك السلبي اللطيف بمساعدة مقدم الرعاية -->
+            <div class="v-card teal">
+              <h4>٢. التحريك السلبي اللطيف للمفاصل</h4>
+              <div class="v-svg-stage">
+                <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">
+                  <!-- سرير المريض -->
+                  <rect x="16" y="88" width="150" height="12" rx="6" fill="#cbd5e1"/>
+                  <!-- مريض مستلقٍ بهدوء -->
+                  <circle cx="42" cy="72" r="10" fill="#fde68a" stroke="#1b365d" stroke-width="1.8"/>
+                  <rect x="56" y="72" width="55" height="14" rx="6" fill="#93c5fd" stroke="#1b365d" stroke-width="1.8"/>
+                  <!-- ساق المريض يرفعها مقدم الرعاية بلطف عند الركبة -->
+                  <path d="M110 78 L136 58 L158 72" fill="none" stroke="#1b365d" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- مقدم الرعاية يسند الساق بلطف -->
+                  <circle cx="188" cy="30" r="10" fill="#fde68a" stroke="#0f766e" stroke-width="1.8"/>
+                  <path d="M178 43 L198 43 L202 88 L174 88 Z" fill="#5eead4" stroke="#0f766e" stroke-width="1.8"/>
+                  <path d="M180 50 L156 68" fill="none" stroke="#0f766e" stroke-width="5.5" stroke-linecap="round"/>
+                  <!-- قوس حركة لطيفة -->
+                  <path d="M126 48 Q140 42 152 52" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="4 3"/>
+                </svg>
+              </div>
+              <p>عند العجز عن الحركة، يقوم مقدم الرعاية بثني ومدّ المفاصل والأطراف بلطف وهدوء.</p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 3.3 النظام الغذائي الغني بالبروتين
+      proteinDiet: `
+        <div class="visual-box">
+          <div class="visual-grid-3">
+            <div class="v-card teal">
+              <h4>🥩 اللحوم</h4>
+              <p>لبناء العضلات وترميم الأنسجة.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>🐟 الأسماك</h4>
+              <p>بروتين عالي الجودة سهل الامتصاص.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>🥚 البيض</h4>
+              <p>غني بالأحماض الأمينية الأساسية.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>🥛 الألبان</h4>
+              <p>تدعم التئام الجلد وتقوية الجسم.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>🫘 البقوليات</h4>
+              <p>مصدر نباتي ممتاز للبروتين.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>🥜 المكسرات</h4>
+              <p>توفر البروتين والطاقة والدهون الصحية.</p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 3.4 شرب الماء (8 إلى 10 أكواب يومياً)
+      hydration: `
+        <div class="visual-box">
+          <div class="v-card info">
+            <h4>الهدف اليومي: ٨ إلى ١٠ أكواب من الماء</h4>
+            <div class="cups-row">
+              ${Array.from({ length: 10 }, (_, i) => `
+                <div class="cup-item">
+                  <svg width="26" height="32" viewBox="0 0 28 34" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="4,4 24,4 21,30 7,30" fill="${i < 8 ? '#3b82f6' : '#dbeafe'}" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round"/>
+                    <line x1="6" y1="11" x2="22" y2="11" stroke="#93c5fd" stroke-width="1.5"/>
+                  </svg>
+                  <span>${i + 1}</span>
+                </div>
+              `).join("")}
+            </div>
+            <p style="text-align:center;">يساعد شرب الماء بانتظام في الحفاظ على تدفق الدم ومنع جفاف الجلد وتكوّن القروح.</p>
+          </div>
+        </div>
+      `,
+
+      // 3.5 الفيتامينات والمعادن
+      vitamins: `
+        <div class="visual-box">
+          <div class="visual-grid-4">
+            <div class="v-card amber">
+              <h4>فيتامين C</h4>
+              <p>أساسي لتكوين الكولاجين والتئام الجروح.</p>
+            </div>
+            <div class="v-card teal">
+              <h4>الزنك (Zinc)</h4>
+              <p>يسرّع تجدد خلايا الجلد وإغلاق القروح.</p>
+            </div>
+            <div class="v-card danger">
+              <h4>فيتامين A</h4>
+              <p>يعزز مناعة الجلد وإصلاح الأنسجة التالفة.</p>
+            </div>
+            <div class="v-card purple">
+              <h4>فيتامين E</h4>
+              <p>يحمي الخلايا كمضاد أكسدة قوي.</p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 3.6 مراقبة الوزن
+      weightMonitor: `
+        <div class="visual-box">
+          <div class="v-card teal">
+            <div class="v-card-header">
+              <div class="v-icon-wrap" style="background:#ccfbf1;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4"/>
+                  <path d="M8 10a4 4 0 0 1 8 0"/>
+                  <line x1="12" y1="10" x2="14" y2="7"/>
+                </svg>
+              </div>
+              <div>
+                <h4>المتابعة الدورية لتغيّر الوزن</h4>
+                <p>تناقص الوزن غير المقصود يُعد علامة مبكرة على وجود سوء تغذية يستدعي التدخل الفوري.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 4.1 السيطرة على الألم
+      painControl: `
+        <div class="visual-box">
+          <div class="v-card amber">
+            <div class="v-card-header">
+              <div class="v-icon-wrap" style="background:#fef3c7;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.5 20.5 19 12a4.95 4.95 0 1 0-7-7L3.5 13.5a4.95 4.95 0 1 0 7 7Z"/>
+                  <line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/>
+                </svg>
+              </div>
+              <div>
+                <h4>توفير مسكنات كافية للألم</h4>
+                <p>إصابات التقرحات قد تكون مؤلمة جداً، وتخفيف الألم يساعد المريض على الراحة وتقبّل تغيير الوضعية.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 4.2 معالجة العدوى
+      infectionControl: `
+        <div class="visual-box">
+          <div class="visual-grid-2">
+            <div class="v-card">
+              <h4>١. وجود البكتيريا أمر طبيعي</h4>
+              <p>جميع التقرحات المفتوحة تحتوي على بكتيريا، ولا يعني ذلك وجود عدوى نشطة تلقائياً.</p>
+            </div>
+            <div class="v-card amber">
+              <h4>٢. التحليل قبل المضاد الحيوي</h4>
+              <p>يقتصر العلاج بالمضادات الحيوية على العدوى الظاهرة سريرياً فقط بعد إجراء التحليل المخبري.</p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 4.3 تحسين التغذية العلاجية
+      clinicalNutrition: `
+        <div class="visual-box">
+          <div class="v-card amber">
+            <div class="v-card-header">
+              <div class="v-icon-wrap" style="background:#fef3c7;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                  <polyline points="16 7 22 7 22 13"/>
+                </svg>
+              </div>
+              <div>
+                <h4>زيادة البروتين والسعرات الحرارية الكلية</h4>
+                <p>ضرورة قصوى خاصة للمرضى الذين يعانون من إصابات الضغط في المراحل المتقدمة لتعويض الأنسجة.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 4.4 توزيع الضغط
+      pressureRedistribution: `
+        <div class="visual-box">
+          <div class="v-card amber">
+            <div class="v-card-header">
+              <div class="v-icon-wrap" style="background:#fef3c7;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="13" width="20" height="6" rx="3"/>
+                  <path d="M6 9v2M12 9v2M18 9v2"/>
+                </svg>
+              </div>
+              <div>
+                <h4>أسطح ووسائد داعمة لتفريغ الضغط</h4>
+                <p>توفير وضعية ودعم مناسبين لتقليل ضغط الأنسجة لجميع المرضى، وخاصة أصحاب التقرحات المفتوحة.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 5.1 الآثار النفسية والاجتماعية
+      psychImpact: `
+        <div class="visual-box">
+          <div class="visual-grid-3">
+            <div class="v-card purple">
+              <h4>القلق والاكتئاب</h4>
+              <p>نتيجة الألم المزمن، ضعف الحركة، والاعتماد المستمر على الآخرين.</p>
+            </div>
+            <div class="v-card purple">
+              <h4>العزلة والخجل</h4>
+              <p>قلة المشاركة الاجتماعية والشعور بالخجل من المظهر أو الرائحة أو الجرح المفتوح.</p>
+            </div>
+            <div class="v-card purple">
+              <h4>تراجع جودة الحياة</h4>
+              <p>انخفاض ملحوظ في الصحة النفسية والروحية والاجتماعية للمريض.</p>
+            </div>
+          </div>
+        </div>
+      `,
+
+      // 5.2 أهمية التعامل مع الجانب النفسي
+      psychSupport: `
+        <div class="visual-box">
+          <div class="visual-grid-3">
+            <div class="v-card purple">
+              <h4>١. دعم نفسي واجتماعي</h4>
+              <p>رعاية شاملة تتجاوز مجرد علاج الجرح الجسدي وتحتوي المريض.</p>
+            </div>
+            <div class="v-card purple">
+              <h4>٢. التزام أعلى بالعلاج</h4>
+              <p>يرفع التزام المريض بتغيير الوضع، التغذية العلاجية، والراحة.</p>
+            </div>
+            <div class="v-card purple">
+              <h4>٣. تسريع التعافي</h4>
+              <p>تحسين الحالة النفسية يسرّع الشفاء ويرفع جودة حياة المريض.</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    // بيانات الخريطة الذهنية المخصصة للمستمعين والزوار (بدون أي ملاحظات للمتحدث)
+    const mindMapData = [
+      {
+        id: "what-is-it",
+        number: "1",
+        title: "ما هي تقرحات الفراش؟",
+        subtitle: "التعريف، أماكن الظهور، ومراحل التطور",
+        color: "#c82333",
+        subNodes: [
+          {
+            title: "آلية الحدوث (كيف تتكون؟)",
+            visualKey: "mechanism",
+            details: [
+              "عندما تتحرك نادراً، فإن وزن جسمك يقيّد تدفق الدم إلى ذراعيك وساقيك ورقبتك وظهرك.",
+              "نقص تدفق الدم إلى الجلد والأنسجة تحت الجلد يسبب تحللها تدريجياً حتى تظهر القرحة."
+            ]
+          },
+          {
+            title: "أماكن ظهور التقرحات (نقاط الارتكاز)",
+            visualKey: "pressurePoints",
+            details: [
+              "تظهر على أجزاء الجسم التي يحدث فيها ضغط مباشر بين الجلد والعظم والسطح الخارجي.",
+              "تشمل نقاط الارتكاز الأساسية: مؤخرة الرأس، الأكتاف، أسفل الظهر، منطقة الورك، الركبتين، والكعبين والكاحلين."
+            ]
+          },
+          {
+            title: "سرعة التطور ومراحل القرحة (٤ مراحل)",
+            visualKey: "stagesTimeline",
+            details: [
+              "يمكن أن تتطور تقرحات الفراش بسرعة كبيرة، وأحياناً في غضون عدة ساعات فقط من البقاء دون حركة.",
+              "تمر بـ ٤ مراحل متدرجة: تبدأ باحمرار الجلد السليم (المرحلة ١)، ثم تقرح سطحي أو فقاعة (المرحلة ٢)، ثم قرحة عميقة تصل للدهون (المرحلة ٣)، وتصل في المراحل المتقدمة للعضلات والعظم (المرحلة ٤)."
+            ]
+          },
+          {
+            title: "من هم الأكثر عرضة لهذا النوع من التقرحات؟",
+            visualKey: "highRisk",
+            details: [
+              "مستخدمو الكراسي المتحركة لفترات طويلة من اليوم.",
+              "الأشخاص الذين يحتاجون لأن يبقوا في الفراش لفترات طويلة من الوقت."
+            ]
+          }
+        ]
+      },
+      {
+        id: "prevention",
+        number: "2",
+        title: "الوقاية (تخفيف الضغط)",
+        subtitle: "شكل الاستلقاء الصحيح والكرسي المتحرك",
+        color: "#1b365d",
+        subNodes: [
+          {
+            title: "أولاً: في حال ملازمة الفراش",
+            visualKey: "bedPositioning",
+            details: [
+              "تغيير وضعية جسدك على الأقل كل ساعتين، أو اطلب المساعدة من شخص في القيام بذلك.",
+              "تحقق من أن الفرش ناعم.",
+              "تأكد من أن ساقاً واحدة ليست فوق الأخرى — ضع وسادة بين ساقيك إذا كنت مستلقياً على جانب واحد.",
+              "ارفع كعبيك قليلاً عن المرتبة باستخدام وسادة أو إسفنج."
+            ]
+          },
+          {
+            title: "ثانياً: في حال استخدام كرسي متحرك",
+            visualKey: "wheelchairPrevention",
+            details: [
+              "قم بتغيير وضعيتك كل 10 إلى 15 دقيقة.",
+              "إذا لم يكن ذلك ممكناً، اطلب من شخص القيام بتحريكك مرة واحدة على الأقل كل ساعة."
+            ]
+          }
+        ]
+      },
+      {
+        id: "good-habits",
+        number: "3",
+        title: "عادات جيدة يمكن أن تساعد",
+        subtitle: "البشرة، الحركة، التغذية، الماء، والوزن",
+        color: "#0f766e",
+        subNodes: [
+          {
+            title: "العناية بالبشرة بشكل عام",
+            visualKey: "skinCare",
+            details: [
+              "اغسل المناطق المتسخة فوراً بالماء الدافئ (وليس الحار) والصابون.",
+              "قم بترطيب البشرة الجافة باستمرار."
+            ]
+          },
+          {
+            title: "النشاط البدني وتحريك الأطراف",
+            visualKey: "exercise",
+            details: [
+              "إذا أمكن، مارس التمارين يومياً.",
+              "إذا كنت غير قادر على الحركة، اطلب من مقدمي الرعاية تحريك أطرافك بلطف."
+            ]
+          },
+          {
+            title: "النظام الغذائي الغني بالبروتين",
+            visualKey: "proteinDiet",
+            details: [
+              "تناول نظاماً غذائياً متوازناً مليئاً بالبروتين (اللحوم، السمك، البيض، الألبان، البقوليات، المكسرات)."
+            ]
+          },
+          {
+            title: "شرب الماء بانتظام",
+            visualKey: "hydration",
+            details: [
+              "اشرب 8 إلى 10 أكواب من الماء يومياً؛ يساعد هذا في الحفاظ على تدفق الدم ومنع تكوّن القروح."
+            ]
+          },
+          {
+            title: "الفيتامينات والمعادن الداعمة",
+            visualKey: "vitamins",
+            details: [
+              "تناول الخضروات والفواكه الغنية بفيتامين C، والتي تحتوي على الزنك، وفيتامين A و E لدعم التئام الأنسجة."
+            ]
+          },
+          {
+            title: "مراقبة الوزن",
+            visualKey: "weightMonitor",
+            details: [
+              "راقب تغيّر الوزن أو فقدانه غير المقصود؛ تناقص الوزن قد يكون علامة على وجود سوء تغذية."
+            ]
+          }
+        ]
+      },
+      {
+        id: "general-care",
+        number: "4",
+        title: "العناية العامة",
+        subtitle: "الألم، العدوى، التغذية العلاجية، وتوزيع الضغط",
+        color: "#b45309",
+        subNodes: [
+          {
+            title: "السيطرة على الألم",
+            visualKey: "painControl",
+            details: [
+              "يجب توفير مسكنات كافية للألم، حيث يمكن أن تكون الإصابات الناجمة عن التقرحات مؤلمة جداً."
+            ]
+          },
+          {
+            title: "معالجة العدوى",
+            visualKey: "infectionControl",
+            details: [
+              "جميع التقرحات المفتوحة تحتوي على بكتيريا.",
+              "يجب التعامل مع العدوى الظاهرة سريرياً فقط من خلال التحليل والعلاج بالمضادات الحيوية."
+            ]
+          },
+          {
+            title: "تحسين التغذية العلاجية",
+            visualKey: "clinicalNutrition",
+            details: [
+              "من المهم تحسين كل من تناول البروتين والسعرات الحرارية الكلية، خصوصاً للمرضى الذين يعانون من إصابات الضغط من المراحل المتقدمة."
+            ]
+          },
+          {
+            title: "توزيع الضغط",
+            visualKey: "pressureRedistribution",
+            details: [
+              "يجب توفير وضعية ودعم مناسبين لتقليل ضغط الأنسجة لجميع المرضى، وخاصة أولئك الذين لديهم تقرحات مفتوحة."
+            ]
+          }
+        ]
+      },
+      {
+        id: "psychological",
+        number: "5",
+        title: "الجانب النفسي",
+        subtitle: "الآثار النفسية ودورها في تسريع التعافي",
+        color: "#5b21b6",
+        subNodes: [
+          {
+            title: "الآثار النفسية والاجتماعية على المريض",
+            visualKey: "psychImpact",
+            details: [
+              "يشعر بعض المرضى بالقلق أو الاكتئاب بسبب الألم المزمن، ضعف الحركة، والاعتماد على الآخرين.",
+              "نقص المشاركة في الأنشطة اليومية والاجتماعية بسبب الإصابة، مما يؤدي إلى العزلة الاجتماعية أو الشعور بالخجل من المظهر أو الرائحة أو الجرح المفتوح.",
+              "انخفاض جودة الحياة النفسية والعاطفية: أظهرت مراجعات أن المرضى يعانون من انخفاض في الصحة النفسية والروحية والاجتماعية."
+            ]
+          },
+          {
+            title: "لماذا من المهم التعامل مع الجانب النفسي؟",
+            visualKey: "psychSupport",
+            details: [
+              "لأن صحة النفس تؤثر على الالتزام بخطة العلاج (التغييرات الموضعية، تغيير الوضع، التغذية، الراحة).",
+              "لأن تحسين الحالة النفسية يمكن أن يسرّع التعافي ويحسّن نوعية حياة المريض.",
+              "لأن الدعم النفسي والاجتماعي يُعد جزءاً من رعاية كاملة تتجاوز مجرد الجرح."
+            ]
+          }
+        ]
+      }
+    ];
+
+    // متغيرات الحالة
+    let activeMainId = null;
+    let showAllMode = false;
+    let currentFontScale = 1;
+
+    const mainContainer = document.getElementById("main-nodes-container");
+    const subContainer = document.getElementById("sub-nodes-container");
+    const svgEl = document.getElementById("threads-svg");
+    const wrapperEl = document.getElementById("mindmap-wrapper");
+
+    /**
+     * رسم بطاقات المحاور الأساسية الخمسة
+     */
+    function renderMainNodes() {
+      mainContainer.innerHTML = "";
+      mindMapData.forEach((item) => {
+        const isActive = showAllMode || activeMainId === item.id;
+        const node = document.createElement("div");
+        node.className = `main-node ${isActive ? "active" : ""}`;
+        node.id = `main-${item.id}`;
+        node.style.borderColor = isActive ? item.color : "var(--border)";
+        if (isActive) {
+          node.style.background = item.color;
+        }
+
+        node.innerHTML = `
+          <div class="main-node-info">
+            <div class="node-num" style="background: ${isActive ? "rgba(255,255,255,0.22)" : item.color + "18"}; color: ${isActive ? "#fff" : item.color}">
+              ${item.number}
+            </div>
+            <div>
+              <h3>${item.title}</h3>
+              <span class="hint">${item.subtitle}</span>
+            </div>
+          </div>
+          <span class="chevron">◀</span>
+        `;
+
+        node.addEventListener("click", () => {
+          showAllMode = false;
+          activeMainId = activeMainId === item.id ? null : item.id;
+          renderAll();
+        });
+
+        mainContainer.appendChild(node);
+      });
+    }
+
+    /**
+     * رسم التقسيمات الفرعية والشروحات المنسدلة للمحور المختار
+     */
+    function renderSubNodes(openAllDetails = false) {
+      subContainer.innerHTML = "";
+
+      const selectedItems = showAllMode
+        ? mindMapData
+        : mindMapData.filter((item) => item.id === activeMainId);
+
+      if (selectedItems.length === 0) {
+        subContainer.innerHTML = `
+          <div class="empty-state" id="empty-state">
+            <span class="icon">👈</span>
+            <h3>استكشف الخريطة الذهنية</h3>
+            <p>اضغط على أي محور من المحاور الخمسة لتتفرع منه الأقسام، ثم اضغط على أي قسم لعرض الشرح والصور التوضيحية.</p>
+          </div>
+        `;
+        requestAnimationFrame(drawThreads);
+        return;
+      }
+
+      selectedItems.forEach((item) => {
+        const group = document.createElement("div");
+        group.className = "branch-group";
+        group.id = `group-${item.id}`;
+
+        if (showAllMode) {
+          const banner = document.createElement("div");
+          banner.className = "branch-header-banner";
+          banner.style.background = item.color;
+          banner.innerHTML = `<span>${item.number}. ${item.title}</span><span>(${item.subNodes.length} تقسيمات)</span>`;
+          group.appendChild(banner);
+        }
+
+        item.subNodes.forEach((sub, idx) => {
+          const card = document.createElement("div");
+          card.className = `sub-card ${openAllDetails ? "open" : ""}`;
+          card.id = `sub-${item.id}-${idx}`;
+          card.dataset.parentId = item.id;
+          card.dataset.color = item.color;
+
+          const detailsHtml = sub.details.map((d) => `<li>${d}</li>`).join("");
+          const visualHtml = sub.visualKey && visualBlocks[sub.visualKey]
+            ? visualBlocks[sub.visualKey]
+            : "";
+
+          card.innerHTML = `
+            <div class="sub-card-header">
+              <div class="sub-card-title">
+                <span class="dot-indicator" style="background: ${item.color}"></span>
+                <span>${sub.title}</span>
+              </div>
+              <span class="toggle-pill">${openAllDetails ? "إخفاء الشرح والصور ▲" : "عرض الشرح والصور ▼"}</span>
+            </div>
+            <div class="sub-card-body">
+              <ul class="explanation-list">${detailsHtml}</ul>
+              ${visualHtml}
+            </div>
+          `;
+
+          const header = card.querySelector(".sub-card-header");
+          const pill = card.querySelector(".toggle-pill");
+          header.addEventListener("click", () => {
+            const isOpen = card.classList.toggle("open");
+            pill.textContent = isOpen ? "إخفاء الشرح والصور ▲" : "عرض الشرح والصور ▼";
+            requestAnimationFrame(drawThreads);
+          });
+
+          group.appendChild(card);
+        });
+
+        subContainer.appendChild(group);
+      });
+
+      requestAnimationFrame(drawThreads);
+    }
+
+    /**
+     * رسم الخيوط المنحنية (SVG Bezier Curves) بين العقدة المركزية والمحاور والتقسيمات
+     */
+    function drawThreads() {
+      try {
+        svgEl.innerHTML = "";
+        const wrapperRect = wrapperEl.getBoundingClientRect();
+        svgEl.setAttribute("width", wrapperRect.width);
+        svgEl.setAttribute("height", wrapperRect.height);
+
+        const rootEl = document.getElementById("root-node");
+        if (!rootEl) return;
+        const rootRect = rootEl.getBoundingClientRect();
+        const isMobile = window.innerWidth <= 1120;
+
+        // 1. خيوط من العقدة المركزية إلى المحاور الأساسية الخمسة
+        mindMapData.forEach((item) => {
+          const mainEl = document.getElementById(`main-${item.id}`);
+          if (!mainEl) return;
+          const mainRect = mainEl.getBoundingClientRect();
+          const isActive = showAllMode || activeMainId === item.id;
+
+          const path = createBezierPath(
+            rootRect,
+            mainRect,
+            wrapperRect,
+            isMobile,
+            isActive ? item.color : "#cbd5e1",
+            isActive ? 3.5 : 2,
+            isActive ? 1 : 0.65,
+            false
+          );
+          svgEl.appendChild(path);
+        });
+
+        // 2. خيوط متحركة من المحور الأساسي النشط إلى تقسيماته الفرعية
+        const subCards = document.querySelectorAll(".sub-card");
+        subCards.forEach((subEl) => {
+          const parentId = subEl.dataset.parentId;
+          const color = subEl.dataset.color;
+          const mainEl = document.getElementById(`main-${parentId}`);
+          if (!mainEl) return;
+
+          const mainRect = mainEl.getBoundingClientRect();
+          const subRect = subEl.getBoundingClientRect();
+
+          const path = createBezierPath(
+            mainRect,
+            subRect,
+            wrapperRect,
+            isMobile,
+            color,
+            2.6,
+            0.9,
+            true
+          );
+          svgEl.appendChild(path);
+        });
+      } catch (err) {
+        console.error("Error drawing SVG threads:", err);
+      }
+    }
+
+    /**
+     * حساب إحداثيات منحنى بيزيه (Bezier Curve) حسب اتجاه الشاشة
+     */
+    function createBezierPath(fromRect, toRect, containerRect, isMobile, color, width, opacity, isSub) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      let startX, startY, endX, endY, d;
+
+      if (!isMobile) {
+        startX = fromRect.left - containerRect.left;
+        startY = fromRect.top + fromRect.height / 2 - containerRect.top;
+        endX = toRect.right - containerRect.left;
+        endY = toRect.top + toRect.height / 2 - containerRect.top;
+        const midX = (startX + endX) / 2;
+        d = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+      } else {
+        startX = fromRect.left + fromRect.width / 2 - containerRect.left;
+        startY = fromRect.bottom - containerRect.top;
+        endX = toRect.left + toRect.width / 2 - containerRect.left;
+        endY = toRect.top - containerRect.top;
+        const midY = (startY + endY) / 2;
+        d = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+      }
+
+      path.setAttribute("d", d);
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", width);
+      path.setAttribute("opacity", opacity);
+      path.setAttribute("class", isSub ? "thread-sub" : "thread-path");
+      return path;
+    }
+
+    function renderAll(openAllDetails = false) {
+      renderMainNodes();
+      renderSubNodes(openAllDetails);
+    }
+
+    function expandAll() {
+      showAllMode = true;
+      activeMainId = null;
+      renderAll(true);
+    }
+
+    function resetMap() {
+      showAllMode = false;
+      activeMainId = null;
+      renderAll(false);
+    }
+
+    function changeFontSize(delta) {
+      currentFontScale = Math.min(1.3, Math.max(0.85, +(currentFontScale + delta).toFixed(2)));
+      document.documentElement.style.setProperty("--font-scale", currentFontScale);
+      requestAnimationFrame(drawThreads);
+    }
+
+    window.addEventListener("resize", () => requestAnimationFrame(drawThreads));
+    if (typeof ResizeObserver !== "undefined") {
+      const resizeObserver = new ResizeObserver(() => requestAnimationFrame(drawThreads));
+      resizeObserver.observe(wrapperEl);
+    }
+
+    window.onload = function () {
+      renderAll();
+    };
+  </script>
+</body>
+</html>
